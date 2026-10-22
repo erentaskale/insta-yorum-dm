@@ -9,6 +9,8 @@
 - **Araçlar:** JavaScript, Cloudflare Workers (Cron ile dakikalık çalışma) + KV (ayarlar, işlenmiş yorumlar). Maliyet 0.
 - **Meta uygulaması:** `yager-dm`, kullanım alanı "Manage messaging & content on Instagram", işletme portföyü yok,
   `yager.dev` Instagram Tester. Yol: Instagram API with Instagram Login (`graph.instagram.com`).
+- **Uygulama yayında (Published) olmalı:** Unpublished iken API yalnız rolü olanların yorumlarını döndürüyor
+  (`comments_count` 14, liste boş geldi). Yayına almak için yalnız gizlilik linki istendi (`PRIVACY.md`), App Review gerekmedi.
 - **Kurallar (Meta):** yorum başına 1 DM (private reply), yorumdan sonra en fazla 7 gün.
 - **Takip şartı:** DM'de "Takip ettim" butonu → `is_user_follow_business` kontrolü. (Faz 5)
 
@@ -22,7 +24,7 @@
 |---|---|---|
 | 0 | Hazırlık (Facebook + Meta geliştirici hesabı, klasör) | ✅ |
 | 1 | Meta uygulaması + token, `/me` testi | ✅ (22 Ekim) |
-| 2 | Elle DM: yorumu oku, private reply at. **Asıl soru: takip etmeyene DM gidiyor mu?** | Sırada |
+| 2 | Elle DM: yorumu oku, private reply at | ✅ (22 Ekim) Takip etmeyen yabancıya DM gitti |
 | 3 | Worker + Cron: yorumları dakikada bir oku, kaydet | |
 | 4 | Kelime → DM (ayar listesi: video, kelime, link) | |
 | 5 | Takip şartı (buton + kontrol) | |
