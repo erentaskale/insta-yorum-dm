@@ -4,6 +4,7 @@
 Ücretsiz, marka yazısı yok. Hazır araçların (LinkDM vb.) yerine geçer; portföy projesi.
 
 Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu okur. Karar ya da durum değişince burası güncellenir.
+**Panel işine başlıyorsan önce `PANEL-DEVIR.md`'yi oku.**
 
 ## Nasıl çalışır
 - Cloudflare Worker (`src/index.js`) cron ile **her dakika** çalışır.
@@ -11,6 +12,7 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 - `src/ayarlar.js`'deki video + kelime eşleşirse yorum yapana private reply (DM) atar.
 - KV (`KAYIT`): video başına DM atılan yorum numaraları; aynı yoruma ikinci DM gitmez. 30 günde silinir.
 - Geçici hatada (429/5xx) en fazla 3 deneme; Instagram kalıcı hatayı da 500 döndürebiliyor.
+- **Bilinen eksik:** dakikada DM sınırı yok; viral videoda Meta limitine çarpınca DM'ler kaybolabilir. Çözüm "musluk" (PANEL-DEVIR.md).
 
 ## Komutlar (proje klasöründe, PowerShell)
 - Yeni video/kelime: `src/ayarlar.js`'ye satır ekle → `npm run deploy`

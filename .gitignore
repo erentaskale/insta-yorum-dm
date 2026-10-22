@@ -5,6 +5,9 @@
 .dev.vars
 secrets*
 
+# Devir notları kişisel (çalışma tarzı, zevkler); yalnız yerelde kalır
+*-DEVIR.md
+
 # Cloudflare / Node
 node_modules/
 .wrangler/
