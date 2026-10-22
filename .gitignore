@@ -1,0 +1,10 @@
+# Gizli bilgiler asla repoya girmez
+*token*
+*.env
+.env*
+.dev.vars
+secrets*
+
+# Cloudflare / Node
+node_modules/
+.wrangler/
