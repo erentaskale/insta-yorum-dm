@@ -34,7 +34,8 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 ## Gizli bilgiler (kesin)
 - Token ve app secret **asla** repoya, sohbete ya da ekran görüntüsüne girmez.
 - Yerelde token: masaüstündeki `ig-token.txt` (bu klasörün dışında). Yayında: Cloudflare secret `IG_TOKEN`.
-- **Token 22 Ekim 2026'da alındı, ~60 günde (≈ 20 Aralık) biter.** Faz 6 ondan önce yapılmalı.
+- Token 60 günde biter. Worker yenilenmiş token'ı KV'de (`token`, `token_tarih`) tutar; KV'de yoksa secret `IG_TOKEN` kullanılır.
+  Elle yeni token alınırsa secret'ı güncelle **ve** KV'deki `token` anahtarını sil, yoksa eski KV token'ı kullanılmaya devam eder.
 - Her push öncesi tarama: `git grep --cached` ile token/secret kalıntısı ara.
 - `PRIVACY.md` söz veriyor: yalnız cevaplanmış yorum numaraları saklanır, 30 günde silinir. Kod buna uymalı.
 
@@ -46,9 +47,16 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 | 2 | Elle DM: yorumu oku, private reply at | ✅ 22 Ekim, takip etmeyen yabancıya DM gitti |
 | 3 | Worker + cron: yorumları dakikada bir okuyor | ✅ 22 Ekim |
 | 4 | Kelime → otomatik DM, KV ile tekrar yok | ✅ 22 Ekim, ilk otomatik DM'ler gitti |
-| 5 | Takip şartı (buton + kontrol) | İsteğe bağlı |
-| 6 | Token'ın kendini yenilemesi (60 gün) | Aralık'tan önce şart |
+| 5 | Takip şartı, video bazında (aşağıdaki not) | Panelle birlikte |
+| 6 | Token'ın kendini yenilemesi (60 gün) | ✅ 22 Ekim yüklendi. Gece cron'u (03:00 UTC) 7 günden eski token'ı yeniler, KV'ye yazar. İlk başarılı yenileme logda doğrulanmalı |
 | 7 | Gerçek videoda kullanım (altın kelimeler Eren'de) | |
 | 8 | **Panel:** kampanyaları ve DM geçmişini tarayıcıdan yönetmek | Sırada, planlanacak |
+
+### Faz 5 notu: takip şartı (Eren, 22 Ekim 2026)
+Panelde her videonun kendi ayarı olacak: **"Herkese DM"** ya da **"Sadece takipçilere DM"**.
+"Sadece takipçiler" seçili videoda kelimeyi yazan kişi takip ediyorsa link gider, etmiyorsa gitmez (ya da "takip et" hatırlatması).
+- Teknik engel: Instagram takip bilgisini (`is_user_follow_business`) yorum anında vermiyor; kişi önce DM'de bir butona basmalı
+  ya da mesaj yazmalı. Buton tıklaması mesaj webhook'uyla geliyor; webhook'suz (polling) yolla nasıl okunacağı araştırılacak
+  (ör. konuşmaları `/me/conversations` ile okumak). Planlarken önce bunu küçük bir elle testle doğrula.
 
 Her "çalıştı" anı bir commit. Kodu Claude yazar, Eren inceler; git komutlarını Eren yazar.

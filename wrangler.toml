@@ -6,9 +6,9 @@ compatibility_date = "2026-10-01"
 # Dışarıya açık adres yok: Worker yalnız cron ile çalışır.
 workers_dev = false
 
-# Dakikada bir çalış
+# Dakikada bir: yorumlara bak. Her gece 03:00 (UTC): token'ı yenile.
 [triggers]
-crons = ["* * * * *"]
+crons = ["* * * * *", "0 3 * * *"]
 
 # Kayıt defteri: DM atılan yorumlar (aynı kişiye iki kez gitmesin)
 [[kv_namespaces]]

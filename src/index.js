@@ -18,55 +18,94 @@ const KAYIT_SURESI_SN = 30 * 24 * 60 * 60;
 // Instagram bazen kalıcı hatayı da 500 olarak döndürüyor; sonsuza dek denemeyelim.
 const EN_FAZLA_DENEME = 3;
 
+// Token 60 günde biter; 7 günden eskiyse gece yenilenir.
+const YENILEME_ARALIGI_MS = 7 * 24 * 60 * 60 * 1000;
+const GECE_CRON = "0 3 * * *";
+
 export default {
-  // Cloudflare bu fonksiyonu wrangler.toml'daki cron'a göre her dakika çağırır.
+  // Cloudflare bu fonksiyonu wrangler.toml'daki cron'lara göre çağırır.
   async scheduled(event, env, ctx) {
-    const videolar = await sonVideolar(env.IG_TOKEN);
-    let gonderilen = 0;
-
-    for (const video of videolar) {
-      const kampanya = KAMPANYALAR.find((k) => k.video === video.id);
-      if (!kampanya) continue; // Bu videoda otomasyon yok.
-
-      const adaylar = (video.comments?.data ?? []).filter((y) => dmGerekirMi(y, kampanya));
-      if (adaylar.length === 0) continue;
-
-      // Bu videonun kaydı: işi biten yorumlar + geçici hata alanların deneme sayısı.
-      const anahtar = `dm:${video.id}`;
-      const kayit = kayitOku(await env.KAYIT.get(anahtar));
-      const bitenler = new Set(kayit.bitti);
-      let degisti = false;
-
-      for (const yorum of adaylar) {
-        if (bitenler.has(yorum.id)) continue;
-
-        const sonuc = await dmAt(env.IG_TOKEN, yorum.id, kampanya.mesaj);
-        degisti = true;
-        if (sonuc.ok) {
-          console.log(`DM gitti | video ${video.id} | yorum ${yorum.id}`);
-          gonderilen++;
-        } else {
-          const deneme = (kayit.deneme[yorum.id] ?? 0) + 1;
-          console.log(`DM gitmedi (${deneme}. deneme) | yorum ${yorum.id} | ${sonuc.hata}`);
-          // Geçici hatada sonraki dakika tekrar dene, ama en fazla EN_FAZLA_DENEME kez.
-          if (!sonuc.kalici && deneme < EN_FAZLA_DENEME) {
-            kayit.deneme[yorum.id] = deneme;
-            continue;
-          }
-        }
-        // Başarılı, kalıcı hata ya da deneme hakkı bitti: bu yorumu bir daha deneme.
-        bitenler.add(yorum.id);
-        delete kayit.deneme[yorum.id];
-      }
-
-      if (degisti) {
-        const yeni = { bitti: [...bitenler], deneme: kayit.deneme };
-        await env.KAYIT.put(anahtar, JSON.stringify(yeni), { expirationTtl: KAYIT_SURESI_SN });
-      }
-    }
-    console.log(`Kontrol bitti: ${videolar.length} video, ${gonderilen} DM.`);
+    if (event.cron === GECE_CRON) return tokenYenile(env);
+    return yorumlaraBak(env);
   },
 };
+
+// Kullanılacak token: KV'deki yenilenmiş olan, yoksa ilk yüklenen secret.
+async function tokenAl(env) {
+  return (await env.KAYIT.get("token")) ?? env.IG_TOKEN;
+}
+
+async function tokenYenile(env) {
+  const tarih = Number((await env.KAYIT.get("token_tarih")) ?? 0);
+  if (Date.now() - tarih < YENILEME_ARALIGI_MS) {
+    console.log("Token yenileme: daha 7 gün olmadı, gerek yok.");
+    return;
+  }
+
+  const eski = await tokenAl(env);
+  const adres = `${API}/refresh_access_token?grant_type=ig_refresh_token`;
+  const cevap = await fetch(adres, { headers: { Authorization: `Bearer ${eski}` } });
+  const veri = await cevap.json().catch(() => ({}));
+
+  if (!cevap.ok || !veri.access_token) {
+    // İlk 24 saatte Instagram yenilemeye izin vermez; yarın gece tekrar denenir.
+    console.log(`Token yenilenemedi (${cevap.status}): ${JSON.stringify(veri.error ?? veri)}`);
+    return;
+  }
+
+  await env.KAYIT.put("token", veri.access_token);
+  await env.KAYIT.put("token_tarih", String(Date.now()));
+  const gun = Math.round((veri.expires_in ?? 0) / 86400);
+  console.log(`Token yenilendi, ${gun} gün geçerli.`);
+}
+
+async function yorumlaraBak(env) {
+  const token = await tokenAl(env);
+  const videolar = await sonVideolar(token);
+  let gonderilen = 0;
+
+  for (const video of videolar) {
+    const kampanya = KAMPANYALAR.find((k) => k.video === video.id);
+    if (!kampanya) continue; // Bu videoda otomasyon yok.
+
+    const adaylar = (video.comments?.data ?? []).filter((y) => dmGerekirMi(y, kampanya));
+    if (adaylar.length === 0) continue;
+
+    // Bu videonun kaydı: işi biten yorumlar + geçici hata alanların deneme sayısı.
+    const anahtar = `dm:${video.id}`;
+    const kayit = kayitOku(await env.KAYIT.get(anahtar));
+    const bitenler = new Set(kayit.bitti);
+    let degisti = false;
+
+    for (const yorum of adaylar) {
+      if (bitenler.has(yorum.id)) continue;
+
+      const sonuc = await dmAt(token, yorum.id, kampanya.mesaj);
+      degisti = true;
+      if (sonuc.ok) {
+        console.log(`DM gitti | video ${video.id} | yorum ${yorum.id}`);
+        gonderilen++;
+      } else {
+        const deneme = (kayit.deneme[yorum.id] ?? 0) + 1;
+        console.log(`DM gitmedi (${deneme}. deneme) | yorum ${yorum.id} | ${sonuc.hata}`);
+        // Geçici hatada sonraki dakika tekrar dene, ama en fazla EN_FAZLA_DENEME kez.
+        if (!sonuc.kalici && deneme < EN_FAZLA_DENEME) {
+          kayit.deneme[yorum.id] = deneme;
+          continue;
+        }
+      }
+      // Başarılı, kalıcı hata ya da deneme hakkı bitti: bu yorumu bir daha deneme.
+      bitenler.add(yorum.id);
+      delete kayit.deneme[yorum.id];
+    }
+
+    if (degisti) {
+      const yeni = { bitti: [...bitenler], deneme: kayit.deneme };
+      await env.KAYIT.put(anahtar, JSON.stringify(yeni), { expirationTtl: KAYIT_SURESI_SN });
+    }
+  }
+  console.log(`Kontrol bitti: ${videolar.length} video, ${gonderilen} DM.`);
+}
 
 // Kayıt defterindeki değeri okur. İlk sürüm düz liste yazıyordu, onu da anlar.
 function kayitOku(metin) {
