@@ -1,0 +1,12 @@
+{
+  "name": "insta-yorum-dm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "loglar": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.3"
+  }
+}

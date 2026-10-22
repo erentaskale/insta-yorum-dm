@@ -1,0 +1,20 @@
+# Cloudflare Worker ayarları
+name = "insta-yorum-dm"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Dışarıya açık adres yok: Worker yalnız cron ile çalışır.
+workers_dev = false
+
+# Dakikada bir çalış
+[triggers]
+crons = ["* * * * *"]
+
+# Kayıt defteri: DM atılan yorumlar (aynı kişiye iki kez gitmesin)
+[[kv_namespaces]]
+binding = "KAYIT"
+id = "1f216c283c6f41b1a5c5250875a1669f"
+
+# Loglar Cloudflare panelinde görünsün
+[observability]
+enabled = true
