@@ -75,10 +75,19 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 | 2 | Elle DM: yorumu oku, private reply at | ✅ 22 Ekim, takip etmeyen yabancıya DM gitti |
 | 3 | Worker + cron: yorumları dakikada bir okuyor | ✅ 22 Ekim |
 | 4 | Kelime → otomatik DM, KV ile tekrar yok | ✅ 22 Ekim, ilk otomatik DM'ler gitti |
-| 5 | Takip şartı, video bazında (aşağıdaki not) | Panelle birlikte |
+| 5 | Takip şartı, video bazında (aşağıdaki not) | Panelden sonraya kaldı (v2) |
 | 6 | Token'ın kendini yenilemesi (60 gün) | ✅ 22 Ekim yüklendi. Gece cron'u (03:00 UTC) 7 günden eski token'ı yeniler, KV'ye yazar. İlk başarılı yenileme logda doğrulanmalı |
-| 7 | Gerçek videoda kullanım (altın kelimeler Eren'de) | |
-| 8 | **Panel:** kampanyaları ve DM geçmişini tarayıcıdan yönetmek | Sırada, planlanacak |
+| 7 | Gerçek videoda kullanım (altın kelimeler Eren'de) | Önce aşağıdaki saldırgan ajan testi |
+| 8 | **Panel:** kampanyaları tarayıcıdan yönetmek + musluk + otomatik testler | ✅ 23-24 Ekim. Arkadaşın `CODEX` yorumuna panelden kurulan kampanyayla gerçek DM gitti |
+
+### Sıradaki: saldırgan ajan testi (Eren, 24 Ekim 2026)
+Faz 7'den (gerçek kampanya) **önce** yapılacak. Ayrı bir test ajanı paneli kırmaya çalışır, yalnız **yerel kopyaya**
+(`wrangler dev` + sahte Instagram; canlıya, gerçek KV'ye ve gerçek Instagram'a dokunmaz, kimseye DM gitmez).
+- Amaç: 47 otomatik testin kapsamadığı, kodu yazanın kör noktasında kalan açıkları bulmak ("taze göz").
+- Denenecekler: giriş/çerez/deneme sınırı atlatma, CSRF, XSS (video açıklaması, kelime, mesaj), bozuk/uç veri,
+  KV yazma kotasını tüketme, kuyruğu bozma, sır (token, hash, oturum anahtarı) sızdırma, güvenlik başlıkları.
+- Maliyet: ~10-20 dk, token olarak bir özellik yazmanın 2-3 katı (Eren kabul etti). Daha ucuz alternatif: `/security-review`.
+- Çıktı: bulgular raporu → kapatılır → bulunan her açık için `test/guvenlik.test.js`'e test eklenir.
 
 ### Faz 5 notu: takip şartı (Eren, 22 Ekim 2026)
 Panelde her videonun kendi ayarı olacak: **"Herkese DM"** ya da **"Sadece takipçilere DM"**.
