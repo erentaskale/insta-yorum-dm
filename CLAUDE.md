@@ -75,7 +75,7 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 | 2 | Elle DM: yorumu oku, private reply at | ✅ 22 Ekim, takip etmeyen yabancıya DM gitti |
 | 3 | Worker + cron: yorumları dakikada bir okuyor | ✅ 22 Ekim |
 | 4 | Kelime → otomatik DM, KV ile tekrar yok | ✅ 22 Ekim, ilk otomatik DM'ler gitti |
-| 5 | Takip şartı, video bazında (aşağıdaki not) | Panelden sonraya kaldı (v2) |
+| 5 | Takip şartı, video bazında (aşağıdaki not) | 24 Ekim kararı: **blöf** ("Takip et + yorum at" videoda, DM'de hatırlatma). Gerçek kontrol ertelendi |
 | 6 | Token'ın kendini yenilemesi (60 gün) | ✅ 22 Ekim yüklendi. Gece cron'u (03:00 UTC) 7 günden eski token'ı yeniler, KV'ye yazar. İlk başarılı yenileme logda doğrulanmalı |
 | 7 | Gerçek videoda kullanım (altın kelimeler Eren'de) | Önce aşağıdaki saldırgan ajan testi |
 | 8 | **Panel:** kampanyaları tarayıcıdan yönetmek + musluk + otomatik testler | ✅ 23-24 Ekim. Arkadaşın `CODEX` yorumuna panelden kurulan kampanyayla gerçek DM gitti |
@@ -90,6 +90,14 @@ Faz 7'den (gerçek kampanya) **önce** yapılacak. Ayrı bir test ajanı paneli 
 - Çıktı: bulgular raporu → kapatılır → bulunan her açık için `test/guvenlik.test.js`'e test eklenir.
 
 ### Faz 5 notu: takip şartı (Eren, 22 Ekim 2026)
+**24 Ekim kararı:** şimdilik kod yok. Videoda "Takip et + yorum at, DM'den göndereyim" denir, DM metnine
+"Takip etmeyi unutma" eklenir. Gerçek kontrol istenirse akış (ManyChat usulü): DM'de buton → kişi basınca
+`is_user_follow_business` sorulur → takipçiyse link, değilse "önce takip et". Önce 3 belirsizlik elle test edilmeli:
+private reply'a buton eklenebiliyor mu, butona basış webhook'suz (`/me/conversations`) görülebiliyor mu,
+takip bilgisi geliyor mu. Ek okuma isteği saatlik bütçeyi sıkıştırır (60 okuma + 120 DM + 60 = 240 > 200).
+Yapılırsa saldırgan ajan testi bundan **sonra** çalıştırılmalı (yeni saldırı yüzeyi).
+
+Eski not:
 Panelde her videonun kendi ayarı olacak: **"Herkese DM"** ya da **"Sadece takipçilere DM"**.
 "Sadece takipçiler" seçili videoda kelimeyi yazan kişi takip ediyorsa link gider, etmiyorsa gitmez (ya da "takip et" hatırlatması).
 - Teknik engel: Instagram takip bilgisini (`is_user_follow_business`) yorum anında vermiyor; kişi önce DM'de bir butona basmalı
