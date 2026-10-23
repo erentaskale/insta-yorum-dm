@@ -3,8 +3,10 @@ name = "insta-yorum-dm"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
-# Dışarıya açık adres yok: Worker yalnız cron ile çalışır.
-workers_dev = false
+# Panel adresi: https://insta-yorum-dm.<hesap>.workers.dev (giriş şifreli, src/panel.js).
+workers_dev = true
+# Her sürüme ayrı önizleme adresi açılmasın; panelin tek kapısı yukarıdaki adres olsun.
+preview_urls = false
 
 # Dakikada bir: yorumlara bak. Her gece 03:00 (UTC): token'ı yenile.
 [triggers]
@@ -14,6 +16,12 @@ crons = ["* * * * *", "0 3 * * *"]
 [[kv_namespaces]]
 binding = "KAYIT"
 id = "1f216c283c6f41b1a5c5250875a1669f"
+
+# Panel girişi: aynı IP'den dakikada en fazla 5 deneme (hafızada sayılır, KV yazma hakkını yemez)
+[[ratelimits]]
+name = "GIRIS_SINIRI"
+namespace_id = "1001"
+simple = { limit = 5, period = 60 }
 
 # Loglar Cloudflare panelinde görünsün
 [observability]

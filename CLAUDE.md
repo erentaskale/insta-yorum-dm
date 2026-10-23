@@ -22,6 +22,7 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 - Yeni video/kelime: panelden (panel gelene kadar: JSON'u bir dosyaya yaz,
   `npx wrangler kv key put kampanyalar --path <dosya> --binding KAYIT --remote`)
 - Canlı log: `npm run loglar`
+- Panel kullanıcı adı/şifresi: `npm run sifre`
 - Kod değişince: `npm run deploy` (bilgisayardaki kod Cloudflare'e ancak böyle gider)
 - Token'ı Cloudflare'e yükle: `Get-Content "$env:USERPROFILE\OneDrive\Masaüstü\ig-token.txt" -Raw | npx wrangler secret put IG_TOKEN`
 
@@ -38,7 +39,10 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
   istemesiydi; Eren Facebook'a girip e-posta + telefonu onaylayınca düzeldi. Bu hata görülürse önce Facebook hesabına bak.
 - **Kelime eşleşmesi:** büyük/küçük harf, ı/i, İ farkı yok; kelimenin yorumda geçmesi yeter.
 - **Takip şartı:** Eren için "blöf" yeterli; gerçek kontrol (Faz 5) isteğe bağlı.
-- **workers.dev:** Worker dışarıya kapalı (`workers_dev = false`). Panel gelince açılacak ve şifreyle korunacak.
+- **Panel girişi (23 Ekim):** `workers.dev` adresi açık, `src/panel.js` korur. Kullanıcı adı + şifre; Cloudflare'de yalnız
+  PBKDF2 özeti (`PANEL_SIFRE_HASH`), imzalı `__Host-` çerez (`OTURUM_ANAHTARI`, 7 gün). Giriş denemesi IP başına dakikada 5
+  (`GIRIS_SINIRI`); sayaç KV'de değil, çünkü KV yazma hakkı DM kayıtlarıyla ortak. Secret yoksa kimse giremez.
+  Şifre değiştirmek: `npm run sifre` (bütün oturumları da kapatır).
 
 ## Gizli bilgiler (kesin)
 - Token ve app secret **asla** repoya, sohbete ya da ekran görüntüsüne girmez.

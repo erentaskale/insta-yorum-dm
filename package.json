@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "deploy": "wrangler deploy",
-    "loglar": "wrangler tail"
+    "loglar": "wrangler tail",
+    "sifre": "node scripts/sifre.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.151.3"

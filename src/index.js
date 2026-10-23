@@ -4,6 +4,8 @@
 // Kampanyalar KV'de, "kampanyalar" anahtarında durur (panel yazar, cron okur):
 //   { "<video numarası>": { aktif: true, kelime: "skill", mesaj: "Selam! İşte link: ..." } }
 
+import { panel } from "./panel.js";
+
 const API = "https://graph.instagram.com";
 
 // Kendi yorumlarımıza DM atmayalım.
@@ -28,6 +30,9 @@ const YENILEME_ARALIGI_MS = 7 * 24 * 60 * 60 * 1000;
 const GECE_CRON = "0 3 * * *";
 
 export default {
+  // Tarayıcıdan gelen istekler: panel (src/panel.js).
+  fetch: panel,
+
   // Cloudflare bu fonksiyonu wrangler.toml'daki cron'lara göre çağırır.
   async scheduled(event, env, ctx) {
     if (event.cron === GECE_CRON) return tokenYenile(env);
