@@ -1,4 +1,9 @@
-// Panel: tarayıcıdan gelen istekleri karşılar. Önce giriş, sonra panel.
+// Panel: tarayıcıdan gelen istekleri karşılar. Önce giriş, sonra panel ve API'si.
+//
+//   GET  /               giriş yoksa giriş sayfası, varsa panel (src/tarayici/panel.html)
+//   GET  /panel.js       panelin tarayıcı kodu (src/tarayici/panel.js)
+//   GET  /api/durum      videolar, kampanyalar, DM sayıları, token durumu
+//   POST /api/kampanya   bir videonun ayarını kaydeder (KV: kampanyalar)
 //
 // Gizli bilgiler (Cloudflare secret, `npm run sifre` yükler):
 //   PANEL_KULLANICI   kullanıcı adı
@@ -7,6 +12,14 @@
 
 const OTURUM_SURESI_SN = 7 * 24 * 60 * 60;
 const CEREZ = "__Host-oturum"; // __Host-: yalnız HTTPS, yalnız bu adres
+
+import PANEL_HTML from "./tarayici/panel.html";
+import PANEL_JS from "./tarayici/panel.js";
+import { VIDEO_SAYISI, TOKEN_OMRU_MS, tokenAl, kampanyalariOku, kayitOku, instagramdanAl } from "./instagram.js";
+
+// Instagram'ın mesaj ve kelime sınırlarına uygun, panelde de aynı sınırlar var.
+const EN_UZUN_KELIME = 50;
+const EN_UZUN_MESAJ = 1000;
 
 // Tahmin saldırısına karşı: aynı IP'den dakikada en fazla 5 giriş denemesi (wrangler.toml'da GIRIS_SINIRI).
 // Sayaç KV'de değil: KV'nin günlük 1.000 yazma hakkı DM kayıtlarıyla ortak, saldırgan onu tüketemesin.
@@ -20,9 +33,87 @@ export async function panel(istek, env) {
 
   const oturum = await oturumVarMi(istek, env);
   if (yol === "/" && istek.method === "GET") {
-    return oturum ? sayfa(panelSayfasi()) : sayfa(girisSayfasi());
+    return oturum ? sayfa(PANEL_HTML) : sayfa(girisSayfasi());
+  }
+
+  // Buradan sonrası yalnız giriş yapmış olana.
+  if (!oturum) return json({ hata: "Giriş gerekli." }, 401);
+
+  if (yol === "/panel.js" && istek.method === "GET") {
+    return new Response(PANEL_JS, {
+      headers: { "Content-Type": "text/javascript; charset=utf-8", ...guvenlikBasliklari() },
+    });
+  }
+  if (yol === "/api/durum" && istek.method === "GET") return durum(env);
+  if (yol === "/api/kampanya" && istek.method === "POST") {
+    // Başka bir siteden bize istek attırılmasın (CSRF): istek bu adresin kendi sayfasından gelmeli.
+    if (istek.headers.get("Origin") !== adres.origin) return json({ hata: "İzin yok." }, 403);
+    return kampanyaKaydet(istek, env);
   }
   return new Response("Bulunamadı", { status: 404, headers: guvenlikBasliklari() });
+}
+
+// --- API ---
+
+async function durum(env) {
+  const kampanyalar = await kampanyalariOku(env);
+
+  // Videolar ve token sağlığı tek istekte: Instagram cevap veriyorsa token çalışıyor demektir.
+  let videolar = [];
+  let instagramHatasi = null;
+  try {
+    const alanlar = "id,caption,thumbnail_url,media_url,timestamp,permalink";
+    const veri = await instagramdanAl(
+      await tokenAl(env),
+      `/me/media?fields=${encodeURIComponent(alanlar)}&limit=${VIDEO_SAYISI}`
+    );
+    videolar = (veri.data ?? []).map((v) => ({
+      id: v.id,
+      kapak: v.thumbnail_url ?? v.media_url ?? null,
+      aciklama: (v.caption ?? "").slice(0, 200),
+      tarih: v.timestamp,
+      link: v.permalink,
+    }));
+  } catch (hata) {
+    console.log(`Panel: ${hata.message}`);
+    instagramHatasi = hata.message;
+  }
+
+  // DM sayısı = son 30 günde bu videodan DM alan kişi sayısı; yalnız aktif videolar için.
+  const sayilar = {};
+  const aktifler = Object.keys(kampanyalar).filter((id) => kampanyalar[id].aktif);
+  await Promise.all(
+    aktifler.map(async (id) => {
+      sayilar[id] = kayitOku(await env.KAYIT.get(`dm:${id}`)).kisiler.length;
+    })
+  );
+
+  // token_tarih yoksa token hiç yenilenmemiş; ne zaman alındığını bilmiyoruz.
+  const tokenTarih = Number((await env.KAYIT.get("token_tarih")) ?? 0);
+  const kalanGun = tokenTarih ? Math.floor((tokenTarih + TOKEN_OMRU_MS - Date.now()) / 86400000) : null;
+
+  return json({ videolar, kampanyalar, sayilar, token: { kalanGun, hata: instagramHatasi } });
+}
+
+async function kampanyaKaydet(istek, env) {
+  const veri = await istek.json().catch(() => null);
+  const video = String(veri?.video ?? "");
+  const aktif = veri?.aktif === true;
+  const kelime = String(veri?.kelime ?? "").trim();
+  const mesaj = String(veri?.mesaj ?? "").trim();
+
+  if (!/^\d{1,30}$/.test(video)) return json({ hata: "Video numarası geçersiz." }, 400);
+  if (kelime.length > EN_UZUN_KELIME) return json({ hata: `Kelime en fazla ${EN_UZUN_KELIME} karakter olabilir.` }, 400);
+  if (mesaj.length > EN_UZUN_MESAJ) return json({ hata: `Mesaj en fazla ${EN_UZUN_MESAJ} karakter olabilir.` }, 400);
+  if (aktif && (!kelime || !mesaj)) return json({ hata: "Aktif video için kelime ve mesaj gerekli." }, 400);
+
+  const kampanyalar = await kampanyalariOku(env);
+  if (!aktif && !kelime && !mesaj) delete kampanyalar[video]; // Boş ve pasif: kaydı tutmaya gerek yok.
+  else kampanyalar[video] = { aktif, kelime, mesaj };
+  await env.KAYIT.put("kampanyalar", JSON.stringify(kampanyalar));
+
+  console.log(`Panel: kampanya kaydedildi | video ${video} | ${aktif ? "aktif" : "pasif"}`);
+  return json({ kampanya: kampanyalar[video] ?? null });
 }
 
 async function girisYap(istek, env) {
@@ -117,8 +208,17 @@ function base64Coz(metin) {
 
 function guvenlikBasliklari() {
   return {
-    // Sayfada dışarıdan yüklenen hiçbir şey yok; başka sitede çerçeve içinde açılamaz.
-    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",
+    // Kod yalnız kendi adresimizden, resim yalnız Instagram'ın sunucularından; başka sitede çerçeve içinde açılamaz.
+    "Content-Security-Policy": [
+      "default-src 'none'",
+      "script-src 'self'",
+      "connect-src 'self'",
+      "img-src https://*.fbcdn.net https://*.cdninstagram.com",
+      "style-src 'unsafe-inline'",
+      "form-action 'self'",
+      "base-uri 'none'",
+      "frame-ancestors 'none'",
+    ].join("; "),
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
     "X-Robots-Tag": "noindex",
@@ -133,11 +233,18 @@ function sayfa(html, durum = 200) {
   });
 }
 
+function json(veri, durum = 200) {
+  return new Response(JSON.stringify(veri), {
+    status: durum,
+    headers: { "Content-Type": "application/json; charset=utf-8", ...guvenlikBasliklari() },
+  });
+}
+
 function yonlendir(yer, cerez) {
   return new Response(null, { status: 303, headers: { Location: yer, "Set-Cookie": cerez, ...guvenlikBasliklari() } });
 }
 
-// --- Sayfalar (şimdilik gri; tasarım en son) ---
+// --- Giriş sayfası (şimdilik gri; tasarım en son) ---
 
 function kabuk(govde) {
   return `<!doctype html>
@@ -168,11 +275,4 @@ function girisSayfasi(hata = "") {
   ${hata ? `<p class="hata">${hata}</p>` : ""}
   <button>Giriş yap</button>
 </form>`);
-}
-
-function panelSayfasi() {
-  return kabuk(`
-<h1>DM Paneli</h1>
-<p>Giriş yaptın. Panel buraya gelecek.</p>
-<form method="post" action="/cikis"><button>Çıkış yap</button></form>`);
 }

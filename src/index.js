@@ -5,15 +5,12 @@
 //   { "<video numarası>": { aktif: true, kelime: "skill", mesaj: "Selam! İşte link: ..." } }
 
 import { panel } from "./panel.js";
-
-const API = "https://graph.instagram.com";
+import { API, VIDEO_SAYISI, tokenAl, kampanyalariOku, kayitOku, instagramdanAl } from "./instagram.js";
 
 // Kendi yorumlarımıza DM atmayalım.
 const HESAP = "yager.dev";
 
-// Tek istekte son kaç video çekilecek ve video başına kaç yorum okunacak.
-// Instagram çoklu video isteğini (?ids=) kaldırdı; aktif videoyu bu pencerenin içinde ararız.
-const VIDEO_SAYISI = 25;
+// Video başına kaç yorum okunacak.
 const YORUM_SAYISI = 50;
 
 // Meta kuralı: yoruma en fazla 7 gün içinde cevap verilebilir.
@@ -39,11 +36,6 @@ export default {
     return yorumlaraBak(env);
   },
 };
-
-// Kullanılacak token: KV'deki yenilenmiş olan, yoksa ilk yüklenen secret.
-async function tokenAl(env) {
-  return (await env.KAYIT.get("token")) ?? env.IG_TOKEN;
-}
 
 async function tokenYenile(env) {
   const tarih = Number((await env.KAYIT.get("token_tarih")) ?? 0);
@@ -71,7 +63,7 @@ async function tokenYenile(env) {
 
 // Panelin kaydettiği kampanyalar; yalnız aktif olanlar.
 async function aktifKampanyalar(env) {
-  const hepsi = JSON.parse((await env.KAYIT.get("kampanyalar")) ?? "{}");
+  const hepsi = await kampanyalariOku(env);
   return Object.fromEntries(Object.entries(hepsi).filter(([, k]) => k.aktif));
 }
 
@@ -141,14 +133,6 @@ async function yorumlaraBak(env) {
   console.log(`Kontrol bitti: ${videolar.length} video, ${gonderilen} DM.`);
 }
 
-// Kayıt defterindeki değeri okur. Eski sürümlerin kayıtlarını da anlar
-// (ilki düz liste yazıyordu, ikincisinde kisiler yoktu).
-function kayitOku(metin) {
-  const veri = JSON.parse(metin ?? "null");
-  if (Array.isArray(veri)) return { bitti: veri, kisiler: [], deneme: {} };
-  return { bitti: veri?.bitti ?? [], kisiler: veri?.kisiler ?? [], deneme: veri?.deneme ?? {} };
-}
-
 // Yorum bu kampanyanın kelimesini içeriyor mu, kendi yorumumuz değil mi, 7 gün geçmedi mi?
 function dmGerekirMi(yorum, kampanya) {
   if (yorum.username === HESAP) return false;
@@ -168,14 +152,7 @@ function sadelestir(yazi) {
 // Tek istekte son videoları yorumlarıyla birlikte ister (saatte 200 istek sınırı için).
 async function sonVideolar(token) {
   const alanlar = `id,comments.limit(${YORUM_SAYISI}){id,text,timestamp,username,from}`;
-  const adres = `${API}/me/media?fields=${encodeURIComponent(alanlar)}&limit=${VIDEO_SAYISI}`;
-
-  const cevap = await fetch(adres, { headers: { Authorization: `Bearer ${token}` } });
-  const veri = await cevap.json();
-
-  if (!cevap.ok) {
-    throw new Error(`Instagram hata verdi (${cevap.status}): ${JSON.stringify(veri.error ?? veri)}`);
-  }
+  const veri = await instagramdanAl(token, `/me/media?fields=${encodeURIComponent(alanlar)}&limit=${VIDEO_SAYISI}`);
   return veri.data ?? [];
 }
 

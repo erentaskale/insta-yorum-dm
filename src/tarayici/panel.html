@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DM Paneli</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #f4f4f2; color: #222; margin: 0; }
+  .sayfa { max-width: 1000px; margin: 0 auto; padding: 16px; }
+  header { display: flex; justify-content: space-between; align-items: center; }
+  h1 { font-size: 20px; margin: 0; }
+  button, input, textarea { font: inherit; }
+  button { padding: 8px 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; }
+  .ozet { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+  .ozet div { background: #fff; border-radius: 10px; padding: 10px 12px; }
+  .ozet span { display: block; font-size: 13px; color: #666; }
+  .ozet b { font-size: 20px; font-weight: 500; }
+  .uyari { background: #fbeaea; color: #8a2424; padding: 10px 12px; border-radius: 10px; margin: 0 0 16px; }
+  .duzen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
+  .liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .satir { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 6px; border: 1px solid transparent; background: #fff; }
+  .satir.secili { border-color: #222; }
+  .satir img, .satir .resimsiz { width: 48px; height: 64px; object-fit: cover; border-radius: 6px; background: #ddd; flex: none; }
+  .bilgi { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .bilgi .aciklama { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bilgi .durum { font-size: 13px; color: #666; }
+  .bilgi .durum.aktif { color: #2f6b1f; }
+  .ayar { background: #fff; border-radius: 10px; padding: 16px; position: sticky; top: 16px; }
+  .ayar form { display: flex; flex-direction: column; gap: 12px; }
+  .ust { display: flex; gap: 12px; }
+  .ust img { width: 90px; height: 120px; object-fit: cover; border-radius: 8px; background: #ddd; flex: none; }
+  .ust p { margin: 0 0 6px; }
+  .ust .aciklama { max-height: 4.5em; overflow: hidden; }
+  .ust .dm { color: #666; font-size: 14px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #444; }
+  label.anahtar { flex-direction: row; align-items: center; gap: 8px; color: #222; font-size: 16px; }
+  label.anahtar input { width: 18px; height: 18px; }
+  input:not([type]), textarea { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; color: #222; }
+  .kaydet { background: #222; color: #fff; border: 0; align-self: flex-start; }
+  .hata { color: #a32d2d; margin: 0; }
+  .sonuc { color: #2f6b1f; margin: 0; }
+  .bos { color: #666; margin: 0; }
+  @media (max-width: 760px) {
+    .duzen { grid-template-columns: 1fr; }
+    .ayar { position: static; }
+    .ozet b { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="sayfa">
+  <header>
+    <h1>DM Paneli</h1>
+    <form method="post" action="/cikis"><button>Çıkış yap</button></form>
+  </header>
+
+  <section class="ozet">
+    <div><span>DM (son 30 gün)</span><b id="toplam">–</b></div>
+    <div><span>Aktif video</span><b id="aktifSayi">–</b></div>
+    <div><span>Token</span><b id="token">–</b></div>
+  </section>
+  <p id="uyari" class="uyari" hidden></p>
+
+  <div class="duzen">
+    <ul id="liste" class="liste"><li class="bos">Videolar yükleniyor…</li></ul>
+    <section id="ayar" class="ayar"><p class="bos">Soldan bir video seç.</p></section>
+  </div>
+</div>
+
+<template id="satirSablonu">
+  <li><button class="satir" type="button">
+    <img alt="" loading="lazy">
+    <span class="bilgi"><span class="aciklama"></span><span class="durum"></span></span>
+  </button></li>
+</template>
+
+<template id="ayarSablonu">
+  <form novalidate>
+    <div class="ust">
+      <img alt="">
+      <div>
+        <p class="aciklama"></p>
+        <p class="dm"></p>
+        <a class="link" target="_blank" rel="noopener noreferrer">Instagram'da aç</a>
+      </div>
+    </div>
+    <label class="anahtar"><input type="checkbox" name="aktif"> Aktif: bu videoya DM gitsin</label>
+    <label>Altın kelime<input name="kelime" maxlength="50" placeholder="skill" autocomplete="off"></label>
+    <label>Gidecek mesaj<textarea name="mesaj" rows="5" maxlength="1000" placeholder="Selam! İstediğin dosya burada: https://..."></textarea></label>
+    <p class="hata" hidden></p>
+    <button class="kaydet">Kaydet</button>
+    <p class="sonuc" hidden></p>
+  </form>
+</template>
+
+<script src="/panel.js"></script>
+</body>
+</html>

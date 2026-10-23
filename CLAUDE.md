@@ -7,7 +7,11 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 **Panel işine başlıyorsan önce `PANEL-DEVIR.md`'yi oku.**
 
 ## Nasıl çalışır
-- Cloudflare Worker (`src/index.js`) cron ile **her dakika** çalışır.
+- Cloudflare Worker (`src/index.js`) cron ile **her dakika** çalışır. Aynı Worker paneli de sunar (`src/panel.js`,
+  tarayıcı dosyaları `src/tarayici/`, ortak Instagram/KV yardımcıları `src/instagram.js`).
+- Panel: https://insta-yorum-dm.suppoldum.workers.dev — solda son 25 video, sağda seçili videonun ayarı
+  (aktif, altın kelime, mesaj). Üstte son 30 günün DM sayısı, aktif video sayısı, token durumu.
+  Panel açılışı Instagram'a 1 istek atar (saatlik ~200 hakkından).
 - Kampanyalar KV'de, `kampanyalar` anahtarında: `{ "<video id>": { aktif, kelime, mesaj } }`. Panel yazar, cron okur.
   Aktif kampanya yoksa Instagram'a hiç istek atılmaz.
 - Tek istekte son 25 videoyu, her birinin son 50 yorumuyla alır (`?ids=` ile seçili video isteği v26'da kaldırıldı).
