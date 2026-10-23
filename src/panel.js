@@ -223,13 +223,15 @@ function base64Coz(metin) {
 
 function guvenlikBasliklari() {
   return {
-    // Kod yalnız kendi adresimizden, resim yalnız Instagram'ın sunucularından; başka sitede çerçeve içinde açılamaz.
+    // Kod yalnız kendi adresimizden, resim yalnız Instagram'ın, font yalnız Google Fonts'un sunucularından;
+    // başka sitede çerçeve içinde açılamaz.
     "Content-Security-Policy": [
       "default-src 'none'",
       "script-src 'self'",
       "connect-src 'self'",
       "img-src https://*.fbcdn.net https://*.cdninstagram.com",
-      "style-src 'unsafe-inline'",
+      "style-src 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src https://fonts.gstatic.com",
       "form-action 'self'",
       "base-uri 'none'",
       "frame-ancestors 'none'",
@@ -267,14 +269,28 @@ function kabuk(govde) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>DM Paneli</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap">
 <style>
-  body { font-family: system-ui, sans-serif; background: #f4f4f2; color: #222; margin: 0; }
-  main { max-width: 360px; margin: 15vh auto; padding: 0 16px; }
+  /* Panelle aynı renkler (src/tarayici/panel.html, tasarım B) */
+  :root { --zemin: #f2f2f1; --yuz: #ffffff; --yazi: #202020; --ikinci: #6b6b6b; --cizgi: #e2e2e0; --yesil: #1f9d55; --kirmizi: #c03535; }
+  @media (prefers-color-scheme: dark) {
+    :root { --zemin: #161616; --yuz: #212121; --yazi: #ededed; --ikinci: #9a9a9a; --cizgi: #2e2e2e; --yesil: #34c46e; --kirmizi: #f07070; }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "DM Sans", system-ui, sans-serif; background: var(--zemin); color: var(--yazi); margin: 0; }
+  main { max-width: 380px; margin: 15vh auto; padding: 0 16px; }
+  .kart { background: var(--yuz); border-radius: 18px; padding: 28px 24px; }
+  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
+  .alt { color: var(--ikinci); margin: 0 0 20px; }
   form { display: flex; flex-direction: column; gap: 10px; }
-  input, button { font: inherit; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; }
-  button { background: #222; color: #fff; border: 0; cursor: pointer; }
-  .hata { color: #a32d2d; margin: 0; }
+  input, button { font: inherit; padding: 12px 14px; border-radius: 12px; }
+  input { border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
+  input:focus { outline: 2px solid var(--yesil); outline-offset: -1px; }
+  button { background: var(--yesil); color: #fff; border: 0; cursor: pointer; font-weight: 600; margin-top: 6px; border-radius: 999px; }
+  .hata { color: var(--kirmizi); margin: 0; }
 </style>
 </head>
 <body><main>${govde}</main></body>
@@ -283,11 +299,14 @@ function kabuk(govde) {
 
 function girisSayfasi(hata = "") {
   return kabuk(`
+<div class="kart">
 <h1>DM Paneli</h1>
+<p class="alt">@yager.dev otomatik DM</p>
 <form method="post" action="/giris">
   <input name="kullanici" placeholder="Kullanıcı adı" autocomplete="username" required>
   <input name="sifre" type="password" placeholder="Şifre" autocomplete="current-password" required>
   ${hata ? `<p class="hata">${hata}</p>` : ""}
   <button>Giriş yap</button>
-</form>`);
+</form>
+</div>`);
 }

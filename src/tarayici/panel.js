@@ -33,7 +33,8 @@ function ozetCiz() {
 
   const { kalanGun, hata } = durum.token;
   $("token").textContent = hata ? "Sorun var" : kalanGun === null ? "Çalışıyor" : `${kalanGun} gün`;
-  $("token").style.color = hata ? "#a32d2d" : "";
+  $("tokenKarti").classList.toggle("mavi", !hata);
+  $("tokenKarti").classList.toggle("kirmizi", Boolean(hata));
 }
 
 function uyar(yazi) {
@@ -58,14 +59,14 @@ function listeCiz() {
     resimKoy(satir.querySelector("img"), video.kapak);
     satir.querySelector(".aciklama").textContent = `${tarih(video.tarih)} · ${ilkSatir(video.aciklama)}`;
 
-    const durumYazisi = satir.querySelector(".durum");
+    const etiket = satir.querySelector(".etiket");
     const kampanya = durum.kampanyalar[video.id];
     if (kampanya?.aktif) {
       const sira = durum.musluk.sirada[video.id];
-      durumYazisi.textContent = `Aktif · "${kampanya.kelime}" · ${durum.sayilar[video.id] ?? 0} DM${sira ? ` · ${sira} sırada` : ""}`;
-      durumYazisi.classList.add("aktif");
+      etiket.textContent = `Aktif · ${kampanya.kelime} · ${durum.sayilar[video.id] ?? 0} DM${sira ? ` · ${sira} sırada` : ""}`;
+      etiket.classList.add("aktif");
     } else {
-      durumYazisi.textContent = kampanya ? `Pasif · "${kampanya.kelime}"` : "Pasif";
+      etiket.textContent = kampanya ? `Pasif · ${kampanya.kelime}` : "Pasif";
     }
 
     buton.classList.toggle("secili", video.id === durum.secili);
@@ -90,11 +91,7 @@ function ayarCiz() {
 
   resimKoy(kutu.querySelector("img"), video.kapak);
   kutu.querySelector(".aciklama").textContent = video.aciklama || "Açıklamasız video";
-  const sira = durum.musluk.sirada[video.id] ?? 0;
-  kutu.querySelector(".dm").textContent = kampanya.aktif
-    ? `Son 30 günde ${durum.sayilar[video.id] ?? 0} kişiye DM gitti.` +
-      (sira ? ` ${sira} kişi sırada, en geç ~${beklemeDk(sira)} dk.` : "")
-    : `${tarih(video.tarih)} tarihli video.`;
+  kutu.querySelector(".dm").textContent = dmYazisi(video, kampanya);
   kutu.querySelector(".link").href = video.link;
   form.aktif.checked = kampanya.aktif;
   form.kelime.value = kampanya.kelime;
@@ -108,6 +105,13 @@ function ayarCiz() {
   form.addEventListener("input", () => (form.querySelector(".sonuc").hidden = true));
 
   $("ayar").replaceChildren(kutu);
+}
+
+function dmYazisi(video, kampanya) {
+  if (!kampanya?.aktif) return `${tarih(video.tarih)} tarihli video.`;
+  const sira = durum.musluk.sirada[video.id] ?? 0;
+  return `Son 30 günde ${durum.sayilar[video.id] ?? 0} kişiye DM gitti.` +
+    (sira ? ` ${sira} kişi sırada, en geç ~${beklemeDk(sira)} dk.` : "");
 }
 
 async function kaydet(form, id) {
@@ -145,6 +149,8 @@ async function kaydet(form, id) {
     else delete durum.kampanyalar[id];
     ozetCiz();
     listeCiz();
+    const video = durum.videolar.find((v) => v.id === id);
+    form.querySelector(".dm").textContent = dmYazisi(video, durum.kampanyalar[id]);
     sonuc.textContent = veri.aktif ? "Kaydedildi. Bir dakika içinde devreye girer." : "Kaydedildi.";
     sonuc.hidden = false;
   } catch (e) {

@@ -3,49 +3,100 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>DM Paneli</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap">
 <style>
+  /* Tasarım B: gri temel, durumlar renkli (aktif yeşil, sıra turuncu, token mavi).
+     Açık/karanlık cihazın ayarını takip eder. */
+  :root {
+    --zemin: #f2f2f1; --yuz: #ffffff; --yazi: #202020; --ikinci: #6b6b6b; --cizgi: #e2e2e0;
+    --yesil: #1f9d55; --yesil-zemin: #dcf5e6; --yesil-yazi: #146c3a;
+    --turuncu-zemin: #fdecd3; --turuncu-yazi: #9a5a07;
+    --mavi-zemin: #dde9fb; --mavi-yazi: #1f4f9a;
+    --kirmizi: #c03535; --kirmizi-zemin: #fbe3e3; --kirmizi-yazi: #8f2222;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --zemin: #161616; --yuz: #212121; --yazi: #ededed; --ikinci: #9a9a9a; --cizgi: #2e2e2e;
+      --yesil: #34c46e; --yesil-zemin: #173524; --yesil-yazi: #7be0a3;
+      --turuncu-zemin: #3a2a12; --turuncu-yazi: #f3b55c;
+      --mavi-zemin: #16263f; --mavi-yazi: #8ab4f2;
+      --kirmizi: #f07070; --kirmizi-zemin: #3d1a1a; --kirmizi-yazi: #f5a3a3;
+    }
+  }
+
   * { box-sizing: border-box; }
-  body { font-family: system-ui, sans-serif; background: #f4f4f2; color: #222; margin: 0; }
-  .sayfa { max-width: 1000px; margin: 0 auto; padding: 16px; }
+  body { font-family: "DM Sans", system-ui, sans-serif; background: var(--zemin); color: var(--yazi); margin: 0; }
+  .sayfa { max-width: 1000px; margin: 0 auto; padding: 20px 16px 40px; }
   header { display: flex; justify-content: space-between; align-items: center; }
-  h1 { font-size: 20px; margin: 0; }
-  button, input, textarea { font: inherit; }
-  button { padding: 8px 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; }
-  .ozet { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 16px 0; }
-  .ozet div { background: #fff; border-radius: 10px; padding: 10px 12px; }
-  .ozet span { display: block; font-size: 13px; color: #666; }
-  .ozet b { font-size: 20px; font-weight: 500; }
-  .uyari { background: #fbeaea; color: #8a2424; padding: 10px 12px; border-radius: 10px; margin: 0 0 16px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .cikis { padding: 6px 14px; border: 1px solid var(--cizgi); border-radius: 999px; background: var(--yuz); color: var(--ikinci); font-size: 14px; }
+
+  /* Özet kartları */
+  .ozet { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 18px 0; }
+  .ozet div { background: var(--yuz); border-radius: 14px; padding: 12px 14px; }
+  .ozet span { display: block; font-size: 13px; opacity: .8; }
+  .ozet b { font-size: 22px; font-weight: 600; }
+  .ozet .yesil { background: var(--yesil-zemin); color: var(--yesil-yazi); }
+  .ozet .turuncu { background: var(--turuncu-zemin); color: var(--turuncu-yazi); }
+  .ozet .mavi { background: var(--mavi-zemin); color: var(--mavi-yazi); }
+  .ozet .kirmizi { background: var(--kirmizi-zemin); color: var(--kirmizi-yazi); }
+  .uyari { background: var(--kirmizi-zemin); color: var(--kirmizi-yazi); padding: 12px 14px; border-radius: 14px; margin: 0 0 18px; }
+
+  /* B yerleşimi: solda liste, sağda ayar */
   .duzen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
   .liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-  .satir { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 6px; border: 1px solid transparent; background: #fff; }
-  .satir.secili { border-color: #222; }
-  .satir img, .satir .resimsiz { width: 48px; height: 64px; object-fit: cover; border-radius: 6px; background: #ddd; flex: none; }
-  .bilgi { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .bilgi .aciklama { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bilgi .durum { font-size: 13px; color: #666; }
-  .bilgi .durum.aktif { color: #2f6b1f; }
-  .ayar { background: #fff; border-radius: 10px; padding: 16px; position: sticky; top: 16px; }
-  .ayar form { display: flex; flex-direction: column; gap: 12px; }
-  .ust { display: flex; gap: 12px; }
-  .ust img { width: 90px; height: 120px; object-fit: cover; border-radius: 8px; background: #ddd; flex: none; }
-  .ust p { margin: 0 0 6px; }
-  .ust .aciklama { max-height: 4.5em; overflow: hidden; }
-  .ust .dm { color: #666; font-size: 14px; }
-  label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #444; }
-  label.anahtar { flex-direction: row; align-items: center; gap: 8px; color: #222; font-size: 16px; }
-  label.anahtar input { width: 18px; height: 18px; }
-  input:not([type]), textarea { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; color: #222; }
-  .kaydet { background: #222; color: #fff; border: 0; align-self: flex-start; }
-  .hata { color: #a32d2d; margin: 0; }
-  .sonuc { color: #2f6b1f; margin: 0; }
-  .bos { color: #666; margin: 0; }
+  .satir { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 8px; border: 1.5px solid transparent; border-radius: 14px; background: var(--yuz); transition: border-color .15s; }
+  .satir:hover { border-color: var(--cizgi); }
+  .satir.secili { border-color: var(--yesil); }
+  .satir img { width: 48px; height: 64px; object-fit: cover; border-radius: 8px; background: var(--cizgi); flex: none; }
+  .bilgi { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .bilgi .aciklama { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+  .etiket { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; max-width: 100%;
+            font-size: 12px; font-weight: 500; padding: 2px 9px; border-radius: 999px;
+            background: var(--cizgi); color: var(--ikinci); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .etiket::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+  .etiket.aktif { background: var(--yesil-zemin); color: var(--yesil-yazi); }
+  .etiket.aktif::before { background: var(--yesil); }
+
+  .ayar { background: var(--yuz); border-radius: 16px; padding: 18px; position: sticky; top: 16px; }
+  .ayar form { display: flex; flex-direction: column; gap: 14px; }
+  .ust { display: flex; gap: 14px; }
+  .ust img { width: 90px; height: 120px; object-fit: cover; border-radius: 10px; background: var(--cizgi); flex: none; }
+  .ust > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .ust p { margin: 0; }
+  .ust .aciklama { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; }
+  .ust .dm { color: var(--ikinci); font-size: 14px; }
+  .ust a { color: var(--yesil-yazi); font-size: 14px; }
+
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ikinci); }
+  input:not([type]), textarea { padding: 10px 12px; border: 1px solid var(--cizgi); border-radius: 10px; background: var(--zemin); color: var(--yazi); resize: vertical; }
+  input:not([type]):focus, textarea:focus { outline: 2px solid var(--yesil); outline-offset: -1px; }
+
+  /* Aktif anahtarı: checkbox'ı düğme gibi çiz */
+  label.anahtar { flex-direction: row; align-items: center; gap: 10px; color: var(--yazi); font-size: 16px; cursor: pointer; }
+  label.anahtar input { appearance: none; width: 44px; height: 26px; border-radius: 999px; background: var(--cizgi); position: relative; margin: 0; cursor: pointer; transition: background .15s; flex: none; }
+  label.anahtar input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .15s; }
+  label.anahtar input:checked { background: var(--yesil); }
+  label.anahtar input:checked::after { transform: translateX(18px); }
+  label.anahtar input:focus-visible { outline: 2px solid var(--yesil); outline-offset: 2px; }
+
+  .kaydet { align-self: flex-start; padding: 10px 22px; border: 0; border-radius: 999px; background: var(--yesil); color: #fff; font-weight: 600; }
+  .kaydet:disabled { opacity: .6; }
+  .hata { color: var(--kirmizi); margin: 0; }
+  .sonuc { color: var(--yesil-yazi); margin: 0; }
+  .bos { color: var(--ikinci); margin: 0; }
+
   @media (max-width: 760px) {
-    .duzen { grid-template-columns: 1fr; }
+    .duzen { grid-template-columns: minmax(0, 1fr); } /* minmax: uzun başlık satırı ekrandan taşırmasın */
     .ayar { position: static; }
     .ozet { grid-template-columns: 1fr 1fr; }
-    .ozet b { font-size: 17px; }
+    .ozet div:last-child { grid-column: 1 / -1; }
+    .ozet b { font-size: 18px; }
   }
 </style>
 </head>
@@ -53,15 +104,15 @@
 <div class="sayfa">
   <header>
     <h1>DM Paneli</h1>
-    <form method="post" action="/cikis"><button>Çıkış yap</button></form>
+    <form method="post" action="/cikis"><button class="cikis">Çıkış yap</button></form>
   </header>
 
   <section class="ozet">
-    <div><span>Bugün giden DM</span><b id="bugun">–</b></div>
-    <div><span>Sırada bekleyen</span><b id="sirada">–</b></div>
+    <div class="yesil"><span>Bugün giden DM</span><b id="bugun">–</b></div>
+    <div class="turuncu"><span>Sırada bekleyen</span><b id="sirada">–</b></div>
     <div><span>DM (son 30 gün)</span><b id="toplam">–</b></div>
     <div><span>Aktif video</span><b id="aktifSayi">–</b></div>
-    <div><span>Token</span><b id="token">–</b></div>
+    <div class="mavi" id="tokenKarti"><span>Token</span><b id="token">–</b></div>
   </section>
   <p id="uyari" class="uyari" hidden></p>
 
@@ -74,7 +125,7 @@
 <template id="satirSablonu">
   <li><button class="satir" type="button">
     <img alt="" loading="lazy">
-    <span class="bilgi"><span class="aciklama"></span><span class="durum"></span></span>
+    <span class="bilgi"><span class="aciklama"></span><span class="etiket"></span></span>
   </button></li>
 </template>
 
