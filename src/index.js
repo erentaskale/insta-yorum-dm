@@ -1,5 +1,5 @@
 // insta-yorum-dm: dakikada bir son videoların yorumlarını okur,
-// ayarlar.js'deki kelimeyi yazan kişiye bir kez DM atar.
+// ayarlar.js'deki kelimeyi yazan kişiye video başına bir kez DM atar.
 
 import { KAMPANYALAR, HESAP } from "./ayarlar.js";
 
@@ -12,7 +12,7 @@ const YORUM_SAYISI = 50;
 // Meta kuralı: yoruma en fazla 7 gün içinde cevap verilebilir.
 const CEVAP_SURESI_MS = 7 * 24 * 60 * 60 * 1000;
 
-// Kayıt defterindeki numaralar 30 gün sonra silinir (PRIVACY.md'deki söz).
+// Kayıt defterindeki yorum ve kişi numaraları 30 gün sonra silinir (PRIVACY.md'deki söz).
 const KAYIT_SURESI_SN = 30 * 24 * 60 * 60;
 
 // Instagram bazen kalıcı hatayı da 500 olarak döndürüyor; sonsuza dek denemeyelim.
@@ -71,20 +71,26 @@ async function yorumlaraBak(env) {
     const adaylar = (video.comments?.data ?? []).filter((y) => dmGerekirMi(y, kampanya));
     if (adaylar.length === 0) continue;
 
-    // Bu videonun kaydı: işi biten yorumlar + geçici hata alanların deneme sayısı.
+    // Bu videonun kaydı: işi biten yorumlar, DM alan kişiler
+    // ve geçici hata alanların deneme sayısı.
     const anahtar = `dm:${video.id}`;
     const kayit = kayitOku(await env.KAYIT.get(anahtar));
     const bitenler = new Set(kayit.bitti);
+    const kisiler = new Set(kayit.kisiler);
     let degisti = false;
 
     for (const yorum of adaylar) {
       if (bitenler.has(yorum.id)) continue;
+      // Aynı kişi kelimeyi kaç kez yazarsa yazsın bu videodan tek DM alır.
+      const kisi = yorum.from?.id;
+      if (kisi && kisiler.has(kisi)) continue;
 
       const sonuc = await dmAt(token, yorum.id, kampanya.mesaj);
       degisti = true;
       if (sonuc.ok) {
         console.log(`DM gitti | video ${video.id} | yorum ${yorum.id}`);
         gonderilen++;
+        if (kisi) kisiler.add(kisi);
       } else {
         const deneme = (kayit.deneme[yorum.id] ?? 0) + 1;
         console.log(`DM gitmedi (${deneme}. deneme) | yorum ${yorum.id} | ${sonuc.hata}`);
@@ -100,18 +106,19 @@ async function yorumlaraBak(env) {
     }
 
     if (degisti) {
-      const yeni = { bitti: [...bitenler], deneme: kayit.deneme };
+      const yeni = { bitti: [...bitenler], kisiler: [...kisiler], deneme: kayit.deneme };
       await env.KAYIT.put(anahtar, JSON.stringify(yeni), { expirationTtl: KAYIT_SURESI_SN });
     }
   }
   console.log(`Kontrol bitti: ${videolar.length} video, ${gonderilen} DM.`);
 }
 
-// Kayıt defterindeki değeri okur. İlk sürüm düz liste yazıyordu, onu da anlar.
+// Kayıt defterindeki değeri okur. Eski sürümlerin kayıtlarını da anlar
+// (ilki düz liste yazıyordu, ikincisinde kisiler yoktu).
 function kayitOku(metin) {
   const veri = JSON.parse(metin ?? "null");
-  if (Array.isArray(veri)) return { bitti: veri, deneme: {} };
-  return { bitti: veri?.bitti ?? [], deneme: veri?.deneme ?? {} };
+  if (Array.isArray(veri)) return { bitti: veri, kisiler: [], deneme: {} };
+  return { bitti: veri?.bitti ?? [], kisiler: veri?.kisiler ?? [], deneme: veri?.deneme ?? {} };
 }
 
 // Yorum bu kampanyanın kelimesini içeriyor mu, kendi yorumumuz değil mi, 7 gün geçmedi mi?
@@ -132,7 +139,7 @@ function sadelestir(yazi) {
 
 // Tek istekte son videoları yorumlarıyla birlikte ister (saatte 200 istek sınırı için).
 async function sonVideolar(token) {
-  const alanlar = `id,comments.limit(${YORUM_SAYISI}){id,text,timestamp,username}`;
+  const alanlar = `id,comments.limit(${YORUM_SAYISI}){id,text,timestamp,username,from}`;
   const adres = `${API}/me/media?fields=${encodeURIComponent(alanlar)}&limit=${VIDEO_SAYISI}`;
 
   const cevap = await fetch(adres, { headers: { Authorization: `Bearer ${token}` } });

@@ -1,6 +1,6 @@
 # Privacy Policy / Gizlilik Politikası
 
-Last updated / Son güncelleme: 22 October 2026
+Last updated / Son güncelleme: 23 October 2026
 
 ## English
 
@@ -13,7 +13,8 @@ one direct message with the content they asked for.
 - This data is used only to decide whether to send the requested message and to send it.
 
 **What is stored**
-- Only the IDs of comments that were already answered, so the same person does not get the same message twice.
+- Only the IDs of comments that were already answered and the Instagram-scoped IDs of people who already
+  received the message, so the same person does not get the same message twice.
   These IDs are deleted automatically after 30 days.
 - No names, profile photos, message contents or other personal data are stored.
 
@@ -36,7 +37,8 @@ tek bir mesajla gönderir.
 - Bu veri yalnızca istenen mesajın gönderilip gönderilmeyeceğine karar vermek ve mesajı göndermek için kullanılır.
 
 **Saklanan veri**
-- Yalnız cevaplanmış yorumların numaraları; aynı kişiye aynı mesaj iki kez gitmesin diye. 30 gün sonra otomatik silinir.
+- Yalnız cevaplanmış yorumların numaraları ve mesajı almış kişilerin Instagram kimlik numaraları;
+  aynı kişiye aynı mesaj iki kez gitmesin diye. 30 gün sonra otomatik silinir.
 - İsim, profil fotoğrafı, mesaj içeriği ya da başka kişisel veri saklanmaz.
 
 **Paylaşım**

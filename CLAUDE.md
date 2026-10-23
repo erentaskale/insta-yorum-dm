@@ -10,7 +10,8 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 - Cloudflare Worker (`src/index.js`) cron ile **her dakika** çalışır.
 - Tek istekte son 5 videoyu, her birinin son 50 yorumuyla alır.
 - `src/ayarlar.js`'deki video + kelime eşleşirse yorum yapana private reply (DM) atar.
-- KV (`KAYIT`): video başına DM atılan yorum numaraları; aynı yoruma ikinci DM gitmez. 30 günde silinir.
+- KV (`KAYIT`): video başına DM atılan yorum numaraları ve DM alan kişilerin numaraları (`from.id`).
+  Aynı kişi kelimeyi kaç kez yazarsa yazsın o videodan tek DM alır; farklı videodan ayrıca alabilir. 30 günde silinir.
 - Geçici hatada (429/5xx) en fazla 3 deneme; Instagram kalıcı hatayı da 500 döndürebiliyor.
 - **Bilinen eksik:** dakikada DM sınırı yok; viral videoda Meta limitine çarpınca DM'ler kaybolabilir. Çözüm "musluk" (PANEL-DEVIR.md).
 
