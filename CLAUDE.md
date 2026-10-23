@@ -32,6 +32,10 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 ## Komutlar (proje klasöründe, PowerShell)
 - Yeni video/kelime: panelden (panel gelene kadar: JSON'u bir dosyaya yaz,
   `npx wrangler kv key put kampanyalar --path <dosya> --binding KAYIT --remote`)
+- **Testler: `npm test`** (her deploy'dan önce). 47 test, ~3 sn. Worker yerel kopyada (Miniflare) çalışır;
+  KV hafızada, Instagram sahte (`test/yardimci.js`), internet kilitli: canlıya ve gerçek Instagram'a hiçbir şey gitmez.
+  Dosyalar: `test/musluk.test.js` (cron, kuyruk, hatalar), `test/guvenlik.test.js` (giriş, çerez, CSRF, XSS, başlıklar),
+  `test/panel.test.js` (API, panel→cron uçtan uca, token yenileme). Test gizlileri `vitest.config.js`'de, sahte değerler.
 - Canlı log: `npm run loglar`
 - Panel kullanıcı adı/şifresi: `npm run sifre`
 - Kod değişince: `npm run deploy` (bilgisayardaki kod Cloudflare'e ancak böyle gider)

@@ -5,9 +5,12 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "loglar": "wrangler tail",
-    "sifre": "node scripts/sifre.mjs"
+    "sifre": "node scripts/sifre.mjs",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.7",
+    "vitest": "^4.1.11",
     "wrangler": "^4.151.3"
   }
 }
