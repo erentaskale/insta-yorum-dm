@@ -1,12 +1,17 @@
-// insta-yorum-dm: dakikada bir son videoların yorumlarını okur,
-// ayarlar.js'deki kelimeyi yazan kişiye video başına bir kez DM atar.
-
-import { KAMPANYALAR, HESAP } from "./ayarlar.js";
+// insta-yorum-dm: dakikada bir aktif videoların yorumlarını okur,
+// kampanyanın kelimesini yazan kişiye video başına bir kez DM atar.
+//
+// Kampanyalar KV'de, "kampanyalar" anahtarında durur (panel yazar, cron okur):
+//   { "<video numarası>": { aktif: true, kelime: "skill", mesaj: "Selam! İşte link: ..." } }
 
 const API = "https://graph.instagram.com";
 
-// Son kaç videoya bakılacak ve video başına kaç yorum okunacak.
-const VIDEO_SAYISI = 5;
+// Kendi yorumlarımıza DM atmayalım.
+const HESAP = "yager.dev";
+
+// Tek istekte son kaç video çekilecek ve video başına kaç yorum okunacak.
+// Instagram çoklu video isteğini (?ids=) kaldırdı; aktif videoyu bu pencerenin içinde ararız.
+const VIDEO_SAYISI = 25;
 const YORUM_SAYISI = 50;
 
 // Meta kuralı: yoruma en fazla 7 gün içinde cevap verilebilir.
@@ -59,14 +64,32 @@ async function tokenYenile(env) {
   console.log(`Token yenilendi, ${gun} gün geçerli.`);
 }
 
+// Panelin kaydettiği kampanyalar; yalnız aktif olanlar.
+async function aktifKampanyalar(env) {
+  const hepsi = JSON.parse((await env.KAYIT.get("kampanyalar")) ?? "{}");
+  return Object.fromEntries(Object.entries(hepsi).filter(([, k]) => k.aktif));
+}
+
 async function yorumlaraBak(env) {
+  const kampanyalar = await aktifKampanyalar(env);
+  if (Object.keys(kampanyalar).length === 0) {
+    // Instagram'a hiç sormayalım; saatlik istek hakkı boşa gitmesin.
+    console.log("Aktif kampanya yok, kontrol atlandı.");
+    return;
+  }
+
   const token = await tokenAl(env);
   const videolar = await sonVideolar(token);
   let gonderilen = 0;
 
+  const bulunanlar = new Set(videolar.map((v) => v.id));
+  for (const id of Object.keys(kampanyalar)) {
+    if (!bulunanlar.has(id)) console.log(`Uyarı: aktif video ${id} son ${VIDEO_SAYISI} videoda yok, izlenemiyor.`);
+  }
+
   for (const video of videolar) {
-    const kampanya = KAMPANYALAR.find((k) => k.video === video.id);
-    if (!kampanya) continue; // Bu videoda otomasyon yok.
+    const kampanya = kampanyalar[video.id];
+    if (!kampanya) continue; // Bu videoda aktif otomasyon yok.
 
     const adaylar = (video.comments?.data ?? []).filter((y) => dmGerekirMi(y, kampanya));
     if (adaylar.length === 0) continue;

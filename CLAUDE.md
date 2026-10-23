@@ -8,15 +8,19 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
 
 ## Nasıl çalışır
 - Cloudflare Worker (`src/index.js`) cron ile **her dakika** çalışır.
-- Tek istekte son 5 videoyu, her birinin son 50 yorumuyla alır.
-- `src/ayarlar.js`'deki video + kelime eşleşirse yorum yapana private reply (DM) atar.
+- Kampanyalar KV'de, `kampanyalar` anahtarında: `{ "<video id>": { aktif, kelime, mesaj } }`. Panel yazar, cron okur.
+  Aktif kampanya yoksa Instagram'a hiç istek atılmaz.
+- Tek istekte son 25 videoyu, her birinin son 50 yorumuyla alır (`?ids=` ile seçili video isteği v26'da kaldırıldı).
+  Aktif video bu 25'in dışındaysa izlenmez, logda uyarı çıkar.
+- Aktif videoda kelime eşleşirse yorum yapana private reply (DM) atar.
 - KV (`KAYIT`): video başına DM atılan yorum numaraları ve DM alan kişilerin numaraları (`from.id`).
   Aynı kişi kelimeyi kaç kez yazarsa yazsın o videodan tek DM alır; farklı videodan ayrıca alabilir. 30 günde silinir.
 - Geçici hatada (429/5xx) en fazla 3 deneme; Instagram kalıcı hatayı da 500 döndürebiliyor.
 - **Bilinen eksik:** dakikada DM sınırı yok; viral videoda Meta limitine çarpınca DM'ler kaybolabilir. Çözüm "musluk" (PANEL-DEVIR.md).
 
 ## Komutlar (proje klasöründe, PowerShell)
-- Yeni video/kelime: `src/ayarlar.js`'ye satır ekle → `npm run deploy`
+- Yeni video/kelime: panelden (panel gelene kadar: JSON'u bir dosyaya yaz,
+  `npx wrangler kv key put kampanyalar --path <dosya> --binding KAYIT --remote`)
 - Canlı log: `npm run loglar`
 - Kod değişince: `npm run deploy` (bilgisayardaki kod Cloudflare'e ancak böyle gider)
 - Token'ı Cloudflare'e yükle: `Get-Content "$env:USERPROFILE\OneDrive\Masaüstü\ig-token.txt" -Raw | npx wrangler secret put IG_TOKEN`
