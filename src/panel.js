@@ -15,7 +15,10 @@ const CEREZ = "__Host-oturum"; // __Host-: yalnız HTTPS, yalnız bu adres
 
 import PANEL_HTML from "./tarayici/panel.html";
 import PANEL_JS from "./tarayici/panel.js";
-import { VIDEO_SAYISI, TOKEN_OMRU_MS, tokenAl, kampanyalariOku, kayitOku, instagramdanAl } from "./instagram.js";
+import {
+  VIDEO_SAYISI, TOKEN_OMRU_MS, DAKIKADA_DM,
+  tokenAl, kampanyalariOku, kayitOku, muslukOku, instagramdanAl,
+} from "./instagram.js";
 
 // Instagram'ın mesaj ve kelime sınırlarına uygun, panelde de aynı sınırlar var.
 const EN_UZUN_KELIME = 50;
@@ -88,11 +91,23 @@ async function durum(env) {
     })
   );
 
+  // Musluk: aktif videolarda DM bekleyenler (pasif videonun sırası bekler, sayılmaz) ve bugün giden DM.
+  const musluk = muslukOku(await env.KAYIT.get("musluk"));
+  const sirada = {};
+  for (const s of musluk.kuyruk) if (kampanyalar[s.v]?.aktif) sirada[s.v] = (sirada[s.v] ?? 0) + 1;
+  const bugun = musluk.gun === new Date().toISOString().slice(0, 10) ? musluk.bugun : 0;
+
   // token_tarih yoksa token hiç yenilenmemiş; ne zaman alındığını bilmiyoruz.
   const tokenTarih = Number((await env.KAYIT.get("token_tarih")) ?? 0);
   const kalanGun = tokenTarih ? Math.floor((tokenTarih + TOKEN_OMRU_MS - Date.now()) / 86400000) : null;
 
-  return json({ videolar, kampanyalar, sayilar, token: { kalanGun, hata: instagramHatasi } });
+  return json({
+    videolar,
+    kampanyalar,
+    sayilar,
+    musluk: { sirada, bugun, dakikadaDm: DAKIKADA_DM },
+    token: { kalanGun, hata: instagramHatasi },
+  });
 }
 
 async function kampanyaKaydet(istek, env) {

@@ -1,7 +1,7 @@
 // Panelin tarayıcı kodu: /api/durum'dan veriyi alır, listeyi ve ayar kutusunu çizer,
 // "Kaydet"te /api/kampanya'ya yollar. Instagram'dan gelen yazılar hep textContent ile basılır (innerHTML yok).
 
-const durum = { videolar: [], kampanyalar: {}, sayilar: {}, secili: null };
+const durum = { videolar: [], kampanyalar: {}, sayilar: {}, musluk: { sirada: {}, bugun: 0, dakikadaDm: 2 }, secili: null };
 
 const $ = (id) => document.getElementById(id);
 
@@ -25,6 +25,11 @@ function ozetCiz() {
   const aktifler = Object.keys(durum.kampanyalar).filter((id) => durum.kampanyalar[id].aktif);
   $("toplam").textContent = aktifler.reduce((top, id) => top + (durum.sayilar[id] ?? 0), 0);
   $("aktifSayi").textContent = aktifler.length;
+  $("bugun").textContent = durum.musluk.bugun;
+
+  // Pasif yapılan videonun sırası sayılmaz (bekler, gönderilmez).
+  const sirada = aktifler.reduce((top, id) => top + (durum.musluk.sirada[id] ?? 0), 0);
+  $("sirada").textContent = sirada === 0 ? "0" : `${sirada} kişi · ~${beklemeDk(sirada)} dk`;
 
   const { kalanGun, hata } = durum.token;
   $("token").textContent = hata ? "Sorun var" : kalanGun === null ? "Çalışıyor" : `${kalanGun} gün`;
@@ -56,7 +61,8 @@ function listeCiz() {
     const durumYazisi = satir.querySelector(".durum");
     const kampanya = durum.kampanyalar[video.id];
     if (kampanya?.aktif) {
-      durumYazisi.textContent = `Aktif · "${kampanya.kelime}" · ${durum.sayilar[video.id] ?? 0} DM`;
+      const sira = durum.musluk.sirada[video.id];
+      durumYazisi.textContent = `Aktif · "${kampanya.kelime}" · ${durum.sayilar[video.id] ?? 0} DM${sira ? ` · ${sira} sırada` : ""}`;
       durumYazisi.classList.add("aktif");
     } else {
       durumYazisi.textContent = kampanya ? `Pasif · "${kampanya.kelime}"` : "Pasif";
@@ -84,8 +90,10 @@ function ayarCiz() {
 
   resimKoy(kutu.querySelector("img"), video.kapak);
   kutu.querySelector(".aciklama").textContent = video.aciklama || "Açıklamasız video";
+  const sira = durum.musluk.sirada[video.id] ?? 0;
   kutu.querySelector(".dm").textContent = kampanya.aktif
-    ? `Son 30 günde ${durum.sayilar[video.id] ?? 0} kişiye DM gitti.`
+    ? `Son 30 günde ${durum.sayilar[video.id] ?? 0} kişiye DM gitti.` +
+      (sira ? ` ${sira} kişi sırada, en geç ~${beklemeDk(sira)} dk.` : "")
     : `${tarih(video.tarih)} tarihli video.`;
   kutu.querySelector(".link").href = video.link;
   form.aktif.checked = kampanya.aktif;
@@ -152,6 +160,12 @@ async function kaydet(form, id) {
 function resimKoy(img, adres) {
   if (adres) img.src = adres;
   img.addEventListener("error", () => img.removeAttribute("src"));
+}
+
+// Musluk dakikada dakikadaDm kişiye DM atar: sıradaki son kişi kaç dakika bekler?
+// (Sıra bütün videolar için ortak; video bazında sayı kabaca bir üst sınırdır.)
+function beklemeDk(kisi) {
+  return Math.ceil(kisi / durum.musluk.dakikadaDm);
 }
 
 function tarih(metin) {

@@ -12,7 +12,7 @@
   h1 { font-size: 20px; margin: 0; }
   button, input, textarea { font: inherit; }
   button { padding: 8px 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; }
-  .ozet { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+  .ozet { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 16px 0; }
   .ozet div { background: #fff; border-radius: 10px; padding: 10px 12px; }
   .ozet span { display: block; font-size: 13px; color: #666; }
   .ozet b { font-size: 20px; font-weight: 500; }
@@ -44,6 +44,7 @@
   @media (max-width: 760px) {
     .duzen { grid-template-columns: 1fr; }
     .ayar { position: static; }
+    .ozet { grid-template-columns: 1fr 1fr; }
     .ozet b { font-size: 17px; }
   }
 </style>
@@ -56,6 +57,8 @@
   </header>
 
   <section class="ozet">
+    <div><span>Bugün giden DM</span><b id="bugun">–</b></div>
+    <div><span>Sırada bekleyen</span><b id="sirada">–</b></div>
     <div><span>DM (son 30 gün)</span><b id="toplam">–</b></div>
     <div><span>Aktif video</span><b id="aktifSayi">–</b></div>
     <div><span>Token</span><b id="token">–</b></div>

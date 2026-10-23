@@ -7,6 +7,14 @@ export const API = "https://graph.instagram.com";
 // Instagram çoklu video isteğini (?ids=) kaldırdı; aktif videoyu bu pencerenin içinde ararız.
 export const VIDEO_SAYISI = 25;
 
+// Musluk (rate limiting): dakikada en fazla 2 DM, günde en fazla 1.000 (KV yazma hakkı da günde 1.000).
+// Neden 2: Meta saatte ~200 istek veriyor. Kuyruk doluyken saatte 60 okuma + 120 DM = 180, panele de pay kalır.
+// (3 olsaydı 240 olurdu; DM'lerin bu sınıra sayılıp sayılmadığı doğrulanmadı, güvenli taraftayız.)
+// Örnek: 300 kişi → son kişi ~150 dk sonra alır. Limite yine çarparsak kimse kaybolmaz:
+// musluk o dakika durur, sonraki dakika kaldığı yerden devam eder.
+export const DAKIKADA_DM = 2;
+export const GUNLUK_TAVAN = 1000;
+
 // Token 60 gün geçerli; gece cron'u 7 günde bir yeniler.
 export const TOKEN_OMRU_MS = 60 * 24 * 60 * 60 * 1000;
 
@@ -26,6 +34,13 @@ export function kayitOku(metin) {
   const veri = JSON.parse(metin ?? "null");
   if (Array.isArray(veri)) return { bitti: veri, kisiler: [], deneme: {} };
   return { bitti: veri?.bitti ?? [], kisiler: veri?.kisiler ?? [], deneme: veri?.deneme ?? {} };
+}
+
+// Musluğun durumu (KV'de `musluk`): DM bekleyenlerin sırası ve bugün giden DM sayısı.
+//   kuyruk: [{ v: video id, y: yorum id, k: kişi id, t: yorum zamanı }], ilk yazan önde
+export function muslukOku(metin) {
+  const veri = JSON.parse(metin ?? "null");
+  return { gun: veri?.gun ?? "", bugun: veri?.bugun ?? 0, kuyruk: veri?.kuyruk ?? [] };
 }
 
 // Instagram'a GET isteği; hata olursa Instagram'ın mesajıyla birlikte fırlatır.

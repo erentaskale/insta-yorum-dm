@@ -16,11 +16,18 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
   Aktif kampanya yoksa Instagram'a hiç istek atılmaz.
 - Tek istekte son 25 videoyu, her birinin son 50 yorumuyla alır (`?ids=` ile seçili video isteği v26'da kaldırıldı).
   Aktif video bu 25'in dışındaysa izlenmez, logda uyarı çıkar.
-- Aktif videoda kelime eşleşirse yorum yapana private reply (DM) atar.
+- Aktif videoda kelime eşleşirse yorum yapan **kuyruğa** girer (KV: `musluk`), DM'i musluk atar:
+  - **FIFO:** ilk yazan ilk alır. Kuyruk KV'de olduğu için son 50 yorumun dışına düşen kişi unutulmaz.
+  - **Rate limiting:** dakikada en fazla 2 DM, günde en fazla 1.000 (UTC günü). 300 kişi → son kişi ~150 dk.
+    Neden 2: saatte 60 okuma + 120 DM = 180, Meta'nın ~200 sınırının altında (3 olsa 240 ederdi).
+  - Meta limit hatası (429 ya da kod 4/17/32/613) deneme hakkı yemez: o dakika durur, sonraki dakika devam.
+  - Pasif videonun sırası bekler (gönderilmez, silinmez); 7 günü geçen yorum kuyruktan düşer.
+  - KV'ye yalnız değişen yazılır; boş dakikada yazma yok.
 - KV (`KAYIT`): video başına DM atılan yorum numaraları ve DM alan kişilerin numaraları (`from.id`).
   Aynı kişi kelimeyi kaç kez yazarsa yazsın o videodan tek DM alır; farklı videodan ayrıca alabilir. 30 günde silinir.
 - Geçici hatada (429/5xx) en fazla 3 deneme; Instagram kalıcı hatayı da 500 döndürebiliyor.
-- **Bilinen eksik:** dakikada DM sınırı yok; viral videoda Meta limitine çarpınca DM'ler kaybolabilir. Çözüm "musluk" (PANEL-DEVIR.md).
+- **Bilinen sınır:** video başına dakikada son 50 yorum okunuyor. Dakikada 50'den fazla yorum alan videoda
+  aradaki yorumlar hiç görülmeyebilir (sayfalama yok; her sayfa saatlik istek hakkından yer).
 
 ## Komutlar (proje klasöründe, PowerShell)
 - Yeni video/kelime: panelden (panel gelene kadar: JSON'u bir dosyaya yaz,
