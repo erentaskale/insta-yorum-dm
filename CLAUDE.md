@@ -29,6 +29,8 @@ Bu dosya projenin ortak hafızası: bu klasörde açılan her oturum önce bunu 
   Yayına almak için yalnız gizlilik linki istendi (`PRIVACY.md`), App Review gerekmedi.
 - **Limitler:** Meta uygulama başına saatte ~200 istek (200 × kullanıcı; kullanıcı = 1). Polling saatte 60 kullanır.
   Private reply: yorum başına 1, yorumdan sonra en fazla 7 gün. Cloudflare ücretsiz: günde 100.000 çalışma, KV günde 1.000 yazma.
+- **"API access blocked" (code 200):** 23 Ekim'de her istek bu hatayı aldı. Sebep yeni Facebook hesabının doğrulama
+  istemesiydi; Eren Facebook'a girip e-posta + telefonu onaylayınca düzeldi. Bu hata görülürse önce Facebook hesabına bak.
 - **Kelime eşleşmesi:** büyük/küçük harf, ı/i, İ farkı yok; kelimenin yorumda geçmesi yeter.
 - **Takip şartı:** Eren için "blöf" yeterli; gerçek kontrol (Faz 5) isteğe bağlı.
 - **workers.dev:** Worker dışarıya kapalı (`workers_dev = false`). Panel gelince açılacak ve şifreyle korunacak.

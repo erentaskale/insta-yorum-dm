@@ -6,13 +6,9 @@
 // kelime: yorumun içinde geçmesi yeter; büyük/küçük harf ve ı/i farkı önemsiz.
 // mesaj: DM olarak gidecek yazı.
 
-export const KAMPANYALAR = [
-  {
-    video: "18372962449208228", // Subagent videosu (test)
-    kelime: "skill",
-    mesaj: "Selam! 🐱 Bu bir test: otomasyon çalışıyor.",
-  },
-];
+// Örnek satır:
+//   { video: "18372962449208228", kelime: "skill", mesaj: "Selam! 🐱 İşte skill dosyası: <link>" },
+export const KAMPANYALAR = [];
 
 // Kendi yorumlarımıza DM atmayalım.
 export const HESAP = "yager.dev";
